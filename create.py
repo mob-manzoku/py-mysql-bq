@@ -8,10 +8,82 @@ def main():
     args = define_parsers()
 
     db = args.db
-    table = args.table
+    conn = create_db_connection(args.host, args.user, args.passwd, db)
 
-    schemas = create_bq_schema(args.host, args.user, args.passwd, db, table)
-    file_out(schemas, db, table, args.prefix, args.suffix)
+    if args.table is None:
+        tables = get_all_tables(conn)
+
+    else:
+        tables = [args.table]
+
+    for t in tables:
+        schemas = create_bq_schema(conn, t)
+        file_out(schemas, db, t, args.prefix, args.suffix)
+
+    conn.close
+
+
+def create_db_connection(host, user, password, db):
+
+    connector = MySQLdb.connect(
+        host=host,
+        user=user,
+        passwd=password,
+        db=db
+    )
+
+    return connector
+
+
+def get_all_tables(conn):
+    ret = []
+
+    cursor = conn.cursor()
+    cursor.execute("SHOW TABLES")
+
+    for row in cursor.fetchall():
+        ret.append(row[0])
+
+    cursor.close
+
+    return ret
+
+
+def create_bq_schema(conn, table):
+    ret = []
+
+    cursor = conn.cursor()
+    cursor.execute("DESC " + table)
+
+    for row in cursor.fetchall():
+        ret.append(
+            {
+                "name": row[0],
+                "type": convert_type(row[1])
+            }
+        )
+
+    cursor.close
+
+    return ret
+
+
+def convert_type(original):
+    if "int" in original:
+        return "INTEGER"
+
+    return "STRING"
+
+
+def file_out(schemas, db, table, prefix, suffix):
+    filename = "_".join([db, table])
+    filename = filename + suffix
+
+    if prefix != "":
+        filename = prefix + "_" + filename
+
+    with open(filename, mode='w') as f:
+        f.write(json.dumps(schemas))
 
 
 def define_parsers():
@@ -35,52 +107,6 @@ def define_parsers():
                         help='Add suffix, default is ".json"')
 
     return parser.parse_args()
-
-
-def create_bq_schema(host, user, password, db, table):
-
-    connector = MySQLdb.connect(
-        host=host,
-        user=user,
-        passwd=password,
-        db=db
-    )
-
-    ret = []
-
-    cursor = connector.cursor()
-    cursor.execute("desc " + table)
-
-    for row in cursor.fetchall():
-        ret.append(
-            {
-                "name": row[0],
-                "type": convert_type(row[1])
-            }
-        )
-
-    cursor.close
-    connector.close
-
-    return ret
-
-
-def convert_type(original):
-    if "int" in original:
-        return "INTEGER"
-
-    return "STRING"
-
-
-def file_out(schemas, db, table, prefix, suffix):
-    filename = "_".join([db, table])
-    filename = filename + suffix
-
-    if prefix != "":
-        filename = prefix + "_" + filename
-
-    with open(filename, mode='w') as f:
-        f.write(json.dumps(schemas))
 
 
 if __name__ == "__main__":
