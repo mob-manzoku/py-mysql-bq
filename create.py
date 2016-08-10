@@ -6,7 +6,12 @@ import argparse
 
 def main():
     args = define_parsers()
-    create_bq_schema(args.host, args.user, args.passwd, args.db, args.table)
+
+    db = args.db
+    table = args.table
+
+    schemas = create_bq_schema(args.host, args.user, args.passwd, db, table)
+    file_out(schemas, db, table, args.prefix, args.suffix)
 
 
 def define_parsers():
@@ -23,7 +28,11 @@ def define_parsers():
     parser.add_argument('db', type=str,
                         help='mysql database name')
     parser.add_argument('--table', type=str,
-                        help='mysql table name')
+                        help='Set a table name, if not set, all tables')
+    parser.add_argument('--prefix', default="", type=str,
+                        help='Add prefix like a project code')
+    parser.add_argument('--suffix', default=".json", type=str,
+                        help='Add suffix, default is ".json"')
 
     return parser.parse_args()
 
@@ -53,10 +62,7 @@ def create_bq_schema(host, user, password, db, table):
     cursor.close
     connector.close
 
-    filename = "_".join([db, table]) + ".json"
-
-    with open(filename, mode='w') as f:
-        f.write(json.dumps(ret))
+    return ret
 
 
 def convert_type(original):
@@ -64,6 +70,17 @@ def convert_type(original):
         return "INTEGER"
 
     return "STRING"
+
+
+def file_out(schemas, db, table, prefix, suffix):
+    filename = "_".join([db, table])
+    filename = filename + suffix
+
+    if prefix != "":
+        filename = prefix + "_" + filename
+
+    with open(filename, mode='w') as f:
+        f.write(json.dumps(schemas))
 
 
 if __name__ == "__main__":
