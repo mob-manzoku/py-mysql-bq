@@ -100,9 +100,9 @@ def define_parsers():
     parser.add_argument('db', type=str,
                         help='mysql database name')
     parser.add_argument('--table', type=str,
-                        help='Set a table name, if not set, all tables')
+                        help='Set a table name, if no set, use all tables')
     parser.add_argument('--prefix', default="", type=str,
-                        help='Add prefix like a project code')
+                        help='Add prefix like directories')
     parser.add_argument('--suffix', default=".json", type=str,
                         help='Add suffix, default is ".json"')
 
