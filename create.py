@@ -3,26 +3,29 @@ import MySQLdb
 import json
 import argparse
 
-INPUT = {
-    "database": "mysql",
-    "table": "user"
-}
-
 
 def main():
+    args = define_parsers()
+    create_bq_schema(args.host, args.user, args.passwd, args.db, args.table)
+
+
+def define_parsers():
     parser = argparse.ArgumentParser(description='MySQL desc to BQ schema',
                                      add_help=False)
     parser.add_argument('--help', action='help', help='help')
-    parser.add_argument('-u', type=str, help='mysql user')
-    parser.add_argument('-h', type=str, help='mysql host')
-    parser.add_argument('-p', type=str, help='mysql password')
-    args = parser.parse_args()
 
-    HOST = args.h
-    PW = args.p
-    USER = args.u
+    parser.add_argument('-u', '--user', type=str, default="root",
+                        help='mysql user')
+    parser.add_argument('-h', '--host', type=str, default="localhost",
+                        help='mysql host')
+    parser.add_argument('-p', '--passwd', type=str, default="",
+                        help='mysql password')
+    parser.add_argument('db', type=str,
+                        help='mysql database name')
+    parser.add_argument('--table', type=str,
+                        help='mysql table name')
 
-    create_bq_schema(HOST, USER, PW, INPUT['database'], INPUT['table'])
+    return parser.parse_args()
 
 
 def create_bq_schema(host, user, password, db, table):
@@ -50,7 +53,7 @@ def create_bq_schema(host, user, password, db, table):
     cursor.close
     connector.close
 
-    filename = "_".join([INPUT['database'], INPUT['table']]) + ".json"
+    filename = "_".join([db, table]) + ".json"
 
     with open(filename, mode='w') as f:
         f.write(json.dumps(ret))
