@@ -1,3 +1,5 @@
 *.json
 *.csv
 debug.sh
+out
+sql

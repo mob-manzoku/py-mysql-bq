@@ -20,7 +20,15 @@ def main():
         schemas = create_bq_schema(conn, t)
         file_out(schemas, db, t, args.prefix, args.suffix)
 
+        # print(json.dumps(schemas))
+
     conn.close
+
+
+def create_sql(table, schemas):
+
+    colomns = ",".join([s['name'] for s in schemas])
+    return "SELECT " + colomns + " FROM " + table
 
 
 def create_db_connection(host, user, password, db):
@@ -69,21 +77,66 @@ def create_bq_schema(conn, table):
 
 
 def convert_type(original):
-    if "int" in original:
+
+    if original.startswith("bool"):
+        return "BOOLEAN"
+    if original.startswith("boolien"):
+        return "BOOLEAN"
+    if original.startswith("tinyint(1)"):
+        # print("tinuint(1) as bool")
+        return "BOOLEAN"
+
+    if original.startswith("tinyint"):
+        return "INTEGER"
+    if original.startswith("smallint"):
+        return "INTEGER"
+    if original.startswith("mediumint"):
+        return "INTEGER"
+    if original.startswith("int"):
+        return "INTEGER"
+    if original.startswith("bigint"):
         return "INTEGER"
 
+    if original.startswith("float"):
+        return "FLOAT"
+    if original.startswith("double"):
+        return "FLOAT"
+    if original.startswith("decimal"):
+        return "FLOAT"
+
+    if original.startswith("char"):
+        return "STRING"
+    if original.startswith("varchar"):
+        return "STRING"
+    if original.startswith("text"):
+        return "STRING"
+
+    if original.startswith("timestamp"):
+        return "TIMESTAMP"
+
+    if original.startswith("binary"):
+        return "BYTES"
+    if original.startswith("varbinary"):
+        return "BYTES"
+
+    print(original)
     return "STRING"
 
 
 def file_out(schemas, db, table, prefix, suffix):
     filename = "_".join([db, table])
-    filename = filename + suffix
 
     if prefix != "":
         filename = prefix + "_" + filename
 
-    with open(filename, mode='w') as f:
+    if suffix != "":
+        filename = filename + "_" + suffix
+
+    with open("format/"+filename+".json", mode='w') as f:
         f.write(json.dumps(schemas))
+
+    with open("sql/"+filename+".sql", mode='w') as f:
+        f.write(create_sql(table, schemas))
 
 
 def define_parsers():
@@ -103,7 +156,7 @@ def define_parsers():
                         help='Set a table name, if no set, use all tables')
     parser.add_argument('--prefix', default="", type=str,
                         help='Add prefix like directories')
-    parser.add_argument('--suffix', default=".json", type=str,
+    parser.add_argument('--suffix', default="", type=str,
                         help='Add suffix, default is ".json"')
 
     return parser.parse_args()
