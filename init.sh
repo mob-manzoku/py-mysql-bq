@@ -16,10 +16,6 @@ source ~/.bashrc
 embulk gem install embulk-input-mysql
 embulk gem install embulk-output-bigquery
 
-# directory
-[ -d format ] || mkdir format
-[ -d sql ] || mkdir sql
-
 # pip
 sudo pip3 install -r requirements.txt
 

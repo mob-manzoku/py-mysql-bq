@@ -112,7 +112,7 @@ def convert_type(original):
         return "STRING"
 
     if original.startswith("timestamp"):
-        return "TIMESTAMP"
+        return "STRING"
 
     if original.startswith("binary"):
         return "BYTES"
